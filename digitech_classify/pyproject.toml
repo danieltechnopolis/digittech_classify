@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "digitech_classify"
+version = "0.0.1"
+description = "A nlp approach to classify companies into tech categories"
+authors = [
+  { name = "Technopolis Group" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "==3.13.2"
+
+
+[tool.ruff]
+line-length = 99
+src = ["digitech_classify"]
+include = ["pyproject.toml", "digitech_classify/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["digitech_classify"]
+force-sort-within-sections = true
+
