@@ -130,11 +130,12 @@ def create_keyword_features(texts, keywords_by_sector, nlp, top_k=50):
         for sector, matcher in matchers.items():
             matches = matcher(doc)
             feature_vec.append(len(matches))  # Raw count
-            feature_vec.append(len(matches) / len(doc))  # Normalized by doc length
+            feature_vec.append(len(matches) / len(doc))  
 
         features.append(feature_vec)
     
     return np.array(features)
+
 
 
 def combine_embeddings_with_features(embeddings, keyword_features, alpha=0.1):
@@ -146,3 +147,6 @@ def combine_embeddings_with_features(embeddings, keyword_features, alpha=0.1):
     # Weight and concatenate
     weighted_features = keyword_features_norm * alpha
     return np.hstack([embeddings, weighted_features])
+
+
+
