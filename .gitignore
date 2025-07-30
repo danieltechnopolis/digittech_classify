@@ -1,5 +1,6 @@
 # Data
 /data/
+digitech_classify/models/
 
 # Mac OS-specific storage files
 .DS_Store
