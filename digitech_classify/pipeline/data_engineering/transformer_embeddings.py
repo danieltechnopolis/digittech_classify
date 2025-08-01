@@ -13,20 +13,31 @@ from digitech_classify.pipeline.data_engineering.features import (
 )
 
 # %%
-data_path = INTERIM_DATA_DIR / "company_lemma_full_description.csv"
+data_path = INTERIM_DATA_DIR / "cleaned_companies_text.csv"
 company_df = pd.read_csv(data_path)
-
-
+company_df = company_df.drop(columns=['processed_text', 'data_source'], errors='ignore')
+company_df = company_df.dropna(subset=['search_text'])
+#%%
 keywords_path = INTERIM_DATA_DIR / "keywords_lemma.csv"
 keyword_df = pd.read_csv(keywords_path)
 
 # %%
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-mpnet-base-v2')
 
 
-texts = company_df[['org_ID', 'features_lemma']].dropna().astype(str)
-embeddings = embed_texts_transformer(texts['features_lemma'].tolist(), model)
+texts = company_df[['org_ID', 'search_text']].dropna().astype(str)
+embeddings = embed_texts_transformer(texts['search_text'].tolist(), model, batch_size=32)
 
+reader = pd.read_csv('company.csv', chunksize=10000)  # Adjust chunksize to fit RAM
+for idx, chunk in enumerate(reader):
+    chunk = chunk.dropna(subset=['search_text'])
+    texts = chunk['search_text'].astype(str).tolist()
+    ids = chunk['org_ID'].tolist()
+    embs = embed_texts_transformer(texts, model)
+    np.save(f'embeddings_part_{idx}.npy', embs)
+    pd.Series(ids).to_csv(f'ids_part_{idx}.csv', index=False)
+    print(f"Saved chunk {idx}")
+3
 
 # %%
 print(f"Embedding shape: {embeddings.shape}")

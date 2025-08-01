@@ -17,17 +17,20 @@ from skmultilearn.model_selection import iterative_train_test_split
 
 def split_data(X, y, test_size=0.2, random_state=42, stratify=False):
     """
-    Split data into train and test sets, with stratification for multiclass or iterative stratification for multilabel data.
+    Split data into train and test sets.
+    - If stratify=True and y is multilabel (multi-hot), uses iterative_train_test_split from skmultilearn.
+    - If stratify=True and y is single-label, uses sklearn train_test_split with stratify.
+    - If stratify=False, uses sklearn train_test_split without stratify.
+    
+    Note: For multilabel, y must be a multi-hot/binarized array.
     """
     if stratify:
         if y.ndim > 1 and y.shape[1] > 1:  # multilabel 
-            # skmultilearn expects numpy arrays
             X_np = np.array(X)
             y_np = np.array(y)
             X_train, y_train, X_test, y_test = iterative_train_test_split(
                 X_np, y_np, test_size
             )
-           
             return X_train, X_test, y_train, y_test
         else:
             return train_test_split(
@@ -318,18 +321,7 @@ def train_random_forest(X_train, y_train, n_estimators=100, max_depth=None, rand
 def train_mlp(X_train, y_train, hidden_layer_sizes=(100,), max_iter=200, random_state=42, multilabel=True, **kwargs):
     """
     Train a Multi-layer Perceptron (MLP) for single-label or multilabel classification.
-    
-    Args:
-        X_train: Training features
-        y_train: Training labels (binary matrix for multilabel, 1D array for single-label)
-        hidden_layer_sizes: Tuple defining the architecture of the MLP
-        max_iter: Maximum number of iterations for training
-        random_state: Random state for reproducibility
-        multilabel: If True, uses OneVsRestClassifier for multilabel
-        **kwargs: Additional arguments for MLPClassifier
-    
-    Returns:
-        Trained classifier
+        
     """
    
     

@@ -3,14 +3,15 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 
-from digitech_classify.pipeline.config import PROCESSED_DATA_DIR
+from digitech_classify.pipeline.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 from digitech_classify.pipeline.data_engineering.features import embed_texts_transformer
 
 # %%
-data_df = pd.read_csv(PROCESSED_DATA_DIR / "multilabelled_training_set_enriched_v2.csv")
+data_df = pd.read_csv(INTERIM_DATA_DIR / "new_training_set_v2.csv")
 
+#%%
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model = SentenceTransformer('all-mpnet-base-v2')
 embeddings = embed_texts_transformer(data_df['search_text'].astype(str).tolist(), model)
 
 
@@ -24,10 +25,10 @@ assert embeddings.dtype == np.float32
 # %%
 
 
-np.savez(PROCESSED_DATA_DIR / 'training_setv2_multilabel_all-MiniLM-L6-v2.npz',
+np.savez(PROCESSED_DATA_DIR / 'training_set_multilabel_all-mpnet-base-v2.npz',
          embeddings=embeddings,
          org_ID=np.array(data_df['org_ID'].values, dtype='str'),
-         sector_label=np.array(data_df['all_sectors'].values, dtype=object)
+         sector_label=np.array(data_df['all_sectors'].values)
        )
 
 print(f"Saved embeddings and labels to {PROCESSED_DATA_DIR }")
