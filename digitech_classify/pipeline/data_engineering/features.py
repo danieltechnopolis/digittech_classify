@@ -6,6 +6,31 @@ import spacy
 from spacy.matcher import Matcher
 from tqdm import tqdm
 
+SECTOR_THRESHOLDS = {
+    'quantum technologies': 0.54,
+    'advanced digital communications and connectivity': 0.51,
+    'robotics': 0.52,
+    'next generation internet and extended reality': 0.52,
+    'photonics': 0.5,
+    'cybersecurity': 0.51,
+    'data analytics' :0.53,
+    'artificial intelligence': 0.52,
+    'blockchain': 0.51,
+    'high performance computing': 0.50,
+    'microelectronics and semiconductors': 0.50,
+    'cloud-edge-iot': 0.52,
+}
+
+
+
+DEFAULT_THRESHOLD = 0.5
+
+
+def apply_sector_threshold(row, sector_col='sector', similarity_col='similarity', sector_thresholds=SECTOR_THRESHOLDS, default_threshold=DEFAULT_THRESHOLD):
+    threshold = sector_thresholds.get(row[sector_col], default_threshold)
+    return row[similarity_col] >= threshold
+
+
 
 def get_spacy_models():
     nlp_full = spacy.load("en_core_web_sm")
@@ -88,15 +113,14 @@ def search_top_k(index, query_vectors, top_k=5, batch_size=10000):
     all_D, all_I = [], []
     for i in range(0, num_queries, batch_size):
         batch = np.ascontiguousarray(query_vectors[i:i+batch_size], dtype=np.float32)
-        # No need to normalize again (already normalized)
+        
         D, I = index.search(batch, top_k)
         all_D.append(D)
         all_I.append(I)
     return np.vstack(all_D), np.vstack(all_I)
 
 
-
-def build_keyword_tag_df(D, indices, org_ids, keyword_texts, sim_threshold=0.8):
+def build_keyword_tag_df(D, indices, org_ids, keyword_texts, sim_threshold=0.5):
     mask = D >= sim_threshold
     company_idx, kw_rank = np.where(mask)
     if len(company_idx) == 0:
@@ -107,6 +131,34 @@ def build_keyword_tag_df(D, indices, org_ids, keyword_texts, sim_threshold=0.8):
         'keyword': np.array(keyword_texts)[indices[company_idx, kw_rank]],
         'similarity': D[company_idx, kw_rank]
     })
+
+
+def pool_embeddings(vectors, labels, pooling='mean'):
+
+    """
+    Pool vectors by group label.
+
+    Parameters:
+        vectors (np.ndarray): Shape (N, D) array of vectors.
+        labels)) (list or array): Length N, group for each vector.
+        pooling (str): 'mean' or 'max'
+
+    Returns:
+        pooled_vectors (np.ndarray): (num_groups, D)
+        group_names (list): group name for each pooled vector
+    """
+    group_names = sorted(set(labels))   
+    pooled_vectors = []
+    for group in group_names:
+        idx = [i for i, label in enumerate(labels) if label == group]
+        if pooling == 'mean':
+            pooled = np.mean(vectors[idx], axis=0)
+        elif pooling == 'max':
+            pooled = np.max(vectors[idx], axis=0)
+        else:
+            raise ValueError("Pooling must be 'mean' or 'max'")
+        pooled_vectors.append(pooled)
+    return np.stack(pooled_vectors), group_names
 
 
 
